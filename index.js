@@ -1,5 +1,5 @@
 var url = require('url'),
-	queryString = require('querystring'),
+    queryString = require('querystring'),
     pg = require('pg'),
     resourceful = require('resourceful'),
     async = require('async');
@@ -51,7 +51,7 @@ var url = require('url'),
 	this.fields = this.parent().keys.join(", ") || '*';
 
 	this.cache = new resourceful.Cache();
-	
+
  };
 
 
