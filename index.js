@@ -3,12 +3,11 @@ var url = require('url'),
     resourceful = require('resourceful'),
     async = require('async');
 
- var PostgreSQL = exports.PostgreSQL = function PostgreSQL(config) {
+ var PostgreSQL = resourceful.engines.PostgreSQL = function PostgreSQL(config) {
  	//To-Do: Setup config and connection string
  });
 
-PostgreSQL.prototype.protocol = 'evented'; //use normal or evented connection
-
+PostgreSQL.prototype.protocol = 'pg';
 
 PostgreSQL.prototype.load = function (data) {
   throw new(Error)("Load not valid for PostgreSQL engine.");
@@ -49,8 +48,4 @@ PostgreSQL.prototype.sync = function(factory, callback) {
   process.nextTick(function () { callback(); });
 };
 
-//register engine with resourceful
-resourceful.engines.PostgreSQL = PostgreSQL;
 
-//export resourceful
-module.exports = resourceful;
