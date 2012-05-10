@@ -1,0 +1,28 @@
+{
+  "author": "Ryan J. Peterson <ryan@mjg.in> (http://www.mjg.in/)",
+  "name": "resourceful-pg",
+  "description": "PostgreSQL storage engine for resourceful",
+  "version": "0.0.0",
+  "homepage": "https://github.com/rpeterson/resourceful-postgres",
+  "keywords": ["pg", "postgresql", "database", "ODM"],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rpeterson/resourceful-postgres.git"
+  },
+  "dependencies": {
+    "pg": "0.6.x",
+    "generic-pool": "1.0.9",
+    "resourceful": "0.1.x"
+  },
+  "devDependencies": {
+    "mocha": "1.0.x",
+    "should": "0.6.x"
+  },
+  "scripts": {
+    "test": "mocha test/*"
+  },
+  "engines": {
+    "node": ">= 0.6.0"
+  },
+  "main": "./lib/resourceful-pg"
+}
