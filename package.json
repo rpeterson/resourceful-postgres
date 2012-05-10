@@ -12,7 +12,8 @@
   "dependencies": {
     "pg": "0.6.x",
     "generic-pool": "1.0.9",
-    "resourceful": "0.1.x"
+    "resourceful": "0.1.x",
+    "async" : "0.1.18"
   },
   "devDependencies": {
     "mocha": "1.0.x",

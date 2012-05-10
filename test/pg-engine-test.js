@@ -2,7 +2,7 @@
 // riak-engine (riak-engine-test.js).
 
 var path = require('path'),
-    sys = require('sys'),
+    sys = require('util'),
     assert = require('assert'),
     events = require('events'),
     http = require('http'),
@@ -12,6 +12,9 @@ var path = require('path'),
     resourceful = require('resourceful'),
     async = require('async');
 
+var pgConnString = 'tcp://postgres@localhost/postgres',
+    pgTestTable  = 'test_pg_engine';
+
 require('../index');
 
 resourceful.env = 'test';
@@ -20,19 +23,20 @@ vows.describe('resourceful/engines/database').addVows({
   "A database containing default resources": {
     topic: function () {
       var promise = new(events.EventEmitter);
-      var db = pg.getClient({evented: true});
-      // destroy all data in the bucket 'test', that we're using for the tests
-      db.keys('test', function(err, keys) {
-        async.map(keys, db.remove.bind(db, 'test'), function(err, result) {
+      var db = new pg.Client(pgConnString);
+          db.connect();
+      db.query("DROP TABLE " + pgTestTable + "", function(err, res) {
+        db.query("CREATE TABLE " + pgTestTable + " (id integer UNIQUE, name varchar(10), age integer, hair varchar(10))", function(err, res) {
           async.map([
-            {key: 'bob', data: {age: 35, hair: 'black', resource: 'User'}},
-            {key: 'tim', data: {age: 16, hair: 'brown', resource: 'User'}},
-            {key: 'mat', data: {age: 29, hair: 'black', resource: 'User'}}
+            {name: 'bob', id: 1, age: 35, hair: 'black', resource: 'User'},
+            {name: 'tim', id: 2, age: 16, hair: 'brown', resource: 'User'},
+            {name: 'mat', id: 3, age: 29, hair: 'black', resource: 'User'}
           ], function(prop, cb) {
-            db.save('test', prop.key, prop.data, cb);
+            db.query("INSERT INTO " + pgTestTable + " (id, name, age, hair) VALUES ('" + prop.id + "', '" + prop.name + "', '" + prop.age + "', '" + prop.hair + "');", cb);
           }, function(e, res) {
             promise.emit('success', res);
           });
+          promise.emit('is created', res);
         });
       });
       return promise;
@@ -46,7 +50,7 @@ vows.describe('resourceful/engines/database').addVows({
   "A default Resource factory" : {
     topic: function() {
       return this.Factory = resourceful.define('user', function () {
-        this.use('pg', {uri: 'tcp://postgres@localhost/postgres'});
+        this.use('pg', {table: pgTestTable});
       });
     },
     "a create() request": {
@@ -136,11 +140,12 @@ vows.describe('resourceful/engines/database').addVows({
       }
     }
   }
-}).addBatch({
+})
+/*.addBatch({
   "A default Resource factory" : {
     topic: function() {
       return this.Factory = resourceful.define('user', function () {
-        this.use('pg', {uri: 'tcp://postgres@localhost/postgres'});
+        this.use('pg', {table: pgTestTable});
       });
     },
     "an all() request": {
@@ -158,7 +163,7 @@ vows.describe('resourceful/engines/database').addVows({
   "A default Resource factory" : {
     topic: function() {
       return this.Factory = resourceful.define('user', function () {
-        this.use('pg', {uri: 'tcp://postgres@localhost/postgres'});
+        this.use('pg', {table: pgTestTable});
       });
     },
     "a get() request": {
@@ -209,7 +214,7 @@ vows.describe('resourceful/engines/database').addVows({
   "A default Resource factory" : {
     topic: function() {
       return this.Factory = resourceful.define('user', function () {
-        this.use('pg', {uri: 'tcp://postgres@localhost/postgres'});
+        this.use('pg', {table: pgTestTable});
       });
     },
     "a save() request": {
@@ -229,7 +234,8 @@ vows.describe('resourceful/engines/database').addVows({
       },
       "[in database]": {
         topic: function() {
-          var db = pg.getClient({evented: true});
+          var db = new pg.Client(pgConnString);
+          db.connect();
           db.get('test', 'David', this.callback);
         },
         "should create object": function(e, obj) {
@@ -258,7 +264,8 @@ vows.describe('resourceful/engines/database').addVows({
       },
       "[in database]": {
         topic: function() {
-          var db = pg.getClient({evented: true});
+          var db = new pg.Client(pgConnString);
+          db.connect();
           db.get('test', 'David', this.callback);
         },
         "should create object": function(e, obj) {
@@ -273,7 +280,7 @@ vows.describe('resourceful/engines/database').addVows({
   "A default Resource factory" : {
     topic: function() {
       return this.Factory = resourceful.define('user', function () {
-        this.use('pg', {uri: 'tcp://postgres@localhost/postgres'});
+        this.use('pg', {table: pgTestTable});
       });
     },
     "a destroy() request on an existing model": {
@@ -285,7 +292,8 @@ vows.describe('resourceful/engines/database').addVows({
       },
       "[in database]": {
         topic: function() {
-          var db = pg.getClient({evented: true});
+          var db = new pg.Client(pgConnString);
+          db.connect();
           db.exists('test', 'David', this.callback);
         },
         "should delete object": function(e, res) {
@@ -295,4 +303,4 @@ vows.describe('resourceful/engines/database').addVows({
       }
     }
   }
-}).export(module);
+})*/.export(module);
