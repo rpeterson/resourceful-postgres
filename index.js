@@ -5,13 +5,7 @@ var url = require('url'),
     async = require('async');
 
 
- var PostgreSQL = resourceful.engines.PostgreSQL = function PostgreSQL(config) {
-
- 	if(config && config.table) {
-		this.table = config.table;
-	} else {
-		throw new Error('table must be set in the config for each model.')
-	}
+ var PostgreSQL = resourceful.engines.Pg = function Pg(config) {
 
 	if (config.uri) {
 		var uri = url.parse('tcp://' + config.uri, true);
@@ -42,13 +36,11 @@ var url = require('url'),
 
 	config.port = parseInt(config.port, 10);
 
-	this.config = config;
+	this.client = config.client || new pg.Client(config.uri);
 
-	this.client = config.client || require('pg').Client(config.uri);
+  this.client.connect();
 
-	this.pkey = config.pkey || 'id';
-
-	this.fields = this.parent().keys.join(", ") || '*';
+  this.config = config;
 
 	this.cache = new resourceful.Cache();
 
@@ -63,45 +55,47 @@ PostgreSQL.prototype.load = function (data) {
 };
 
 
-PostgreSQL.prototype.get = function(key, cb) {
-	this.client.query(
+PostgreSQL.prototype.get = function(id, cb) {
+	this._query(
 		"SELECT " + this.fields 
 		+ " FROM " + this.table 
-		+ " WHERE " + this.pkey + " = " + key 
+		+ " WHERE " + this.key + " = " + key 
 		+ " LIMIT 1"
-	, cb);
+    , cb);
 };
 
 
 PostgreSQL.prototype.save = function(obj, cb) {
-	if( obj[this.pkey] === "undefined" ) {
-		this.create(obj, cb);
+	if( obj.id ) {
+    this.update(obj.id, obj, cb);
 	} else {
-		this.update(obj[this.pkey], obj, cb);
+		this.create(obj, cb);
 	}
 };
 
+
 PostgreSQL.prototype.create = function(obj, cb) {
-	this.client.query(
-		"INSERT INTO " + this.table 
-		+ " (" + this.fields + ")" 
-		+ " VALUES ('" + obj.join("', '") + "');"
-	, cb);
+  delete obj.id;
+	this._query(
+      "INSERT INTO " + this.table 
+      + " (" + this._getFields(obj) + ")" 
+      + " VALUES ('" + obj.join("', '") + "');"
+  , cb);
 };
 
-PostgreSQL.prototype.update = function(key, obj, cb) {
-	this.client.query(
+
+PostgreSQL.prototype.update = function(id, obj, cb) {
+	this._query(
 		"UPDATE " + this.table 
 		+ " SET " + queryString.stringify(obj, '", ', '= "')
-		+ " WHERE " + this.pkey + " = " + key 
+		+ " WHERE " + this.key + " = " + id 
 	, cb);
 };
 
 
-PostgreSQL.prototype.destroy = function(key, cb) {
-	this.client.query(
-		"DELETE FROM " + this.table 
-		+ " WHERE " + this.pkey + " = " + key 
+PostgreSQL.prototype.destroy = function(id, cb) {
+		this._query("DELETE FROM " + this.table 
+		+ " WHERE " + this.key + " = " + id 
 	, cb);
 };
 
@@ -118,4 +112,18 @@ PostgreSQL.prototype.filter = function(filter, cb) {
 
 PostgreSQL.prototype.sync = function(factory, callback) {
   process.nextTick(function () { callback(); });
+};
+
+PostgreSQL.prototype._getFields = function(obj){
+  var fields = [];
+  for(key in obj){
+    fields.push(key);
+  }
+  return fields.join(", ");
+};
+
+
+PostgreSQL.prototype._query = function(sql, cb){
+  console.log("\n\t" + sql + "\n");
+  this.client.query(sql, cb);
 };
