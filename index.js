@@ -7,6 +7,12 @@ var url = require('url'),
 
  var PostgreSQL = resourceful.engines.Pg = function Pg(config) {
 
+ 	if(config && config.table) {
+		this.table = config.table;
+	} else {
+		throw new Error('table must be set in the config for each model.')
+	}
+
 	if (config.uri) {
 		var uri = url.parse('tcp://' + config.uri, true);
 		config.host = uri.hostname;
@@ -40,6 +46,8 @@ var url = require('url'),
 
   this.client.connect();
 
+  this._key = config._key || 'id';
+
   this.config = config;
 
 	this.cache = new resourceful.Cache();
@@ -57,9 +65,9 @@ PostgreSQL.prototype.load = function (data) {
 
 PostgreSQL.prototype.get = function(id, cb) {
 	this._query(
-		"SELECT " + this.fields 
+		"SELECT * " 
 		+ " FROM " + this.table 
-		+ " WHERE " + this.key + " = " + key 
+		+ " WHERE " + this._key + " = " + id 
 		+ " LIMIT 1"
     , cb);
 };
@@ -75,11 +83,10 @@ PostgreSQL.prototype.save = function(obj, cb) {
 
 
 PostgreSQL.prototype.create = function(obj, cb) {
-  delete obj.id;
 	this._query(
       "INSERT INTO " + this.table 
       + " (" + this._getFields(obj) + ")" 
-      + " VALUES ('" + obj.join("', '") + "');"
+      + " VALUES (" + this._getValues(obj) + ") RETURNING *;"
   , cb);
 };
 
@@ -87,15 +94,15 @@ PostgreSQL.prototype.create = function(obj, cb) {
 PostgreSQL.prototype.update = function(id, obj, cb) {
 	this._query(
 		"UPDATE " + this.table 
-		+ " SET " + queryString.stringify(obj, '", ', '= "')
-		+ " WHERE " + this.key + " = " + id 
+		+ " SET " + queryString.stringify(obj, '\', ', ' = \'') + '\''
+		+ " WHERE " + this._key + " = " + id + " RETURNING *;"
 	, cb);
 };
 
 
 PostgreSQL.prototype.destroy = function(id, cb) {
-		this._query("DELETE FROM " + this.table 
-		+ " WHERE " + this.key + " = " + id 
+	this._query("DELETE FROM " + this.table 
+		+ " WHERE " + this._key + " = " + id 
 	, cb);
 };
 
@@ -114,7 +121,10 @@ PostgreSQL.prototype.sync = function(factory, callback) {
   process.nextTick(function () { callback(); });
 };
 
+
 PostgreSQL.prototype._getFields = function(obj){
+  delete obj.id;
+  delete obj.resource;
   var fields = [];
   for(key in obj){
     fields.push(key);
@@ -123,7 +133,23 @@ PostgreSQL.prototype._getFields = function(obj){
 };
 
 
+PostgreSQL.prototype._getValues = function(obj){
+  delete obj.id;
+  delete obj.resource;
+  var fields = [];
+  for(key in obj){
+    value = (typeof obj[key] === 'number') ? obj[key] : "'" + obj[key] + "'";
+    fields.push(value);
+  }
+  return fields.join(", ");
+};
+
+
 PostgreSQL.prototype._query = function(sql, cb){
-  console.log("\n\t" + sql + "\n");
-  this.client.query(sql, cb);
+  this.client.query(sql, function(err, res){
+      if(err) console.log(err);
+      result = null;
+      if(res) result = (res.rowCount === 1) ? res.rows[0] : res.rows;
+      cb(err, result);
+  });
 };

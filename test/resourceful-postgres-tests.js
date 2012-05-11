@@ -45,7 +45,7 @@ vows.describe('resourceful/engines/database').addVows({
   "A default Resource factory" : {
     topic: function() {
       this.Factory = resourceful.define('user', function () {
-        this.use('pg');
+        this.use('pg', {table: pgTestTable});
       });
       this.Factory._key = 'id';
       delete this.Factory.schema.properties['_id'];
@@ -60,25 +60,28 @@ vows.describe('resourceful/engines/database').addVows({
         r.create({name: 'james', age: 30, hair: 'red'}, this.callback);
       },
       "should return the newly created object": function (e, obj) {
+        if(e) console.log(e);
         assert.instanceOf(obj, this.Factory);
-        assert.equal(obj.id, 4);
-      }
-    },
-    "should create the record in the db": {
-      topic: function (_, r) {
-        r.get(4, this.callback);
-      },        
-      "which can then be retrieved": function (e, res) {
-        assert.isObject(res);
-        assert.equal(res.age, 30);
+        assert.equal(obj.name, 'james');
       },
-      "and updated": {
-        topic: function (r) {
-          r.update({ hair: 'blue'}, this.callback);
-        },
+      "should create the record in the db": {
+        topic: function (_, r) {
+          r.get(4, this.callback);
+        },        
         "which can then be retrieved": function (e, res) {
+          if(e) console.log(e);
           assert.isObject(res);
-          assert.equal(res.hair, 'blue');
+          assert.equal(res.id, 4);
+          assert.equal(res.age, 30);
+        },
+        "and be able to update it": {
+          topic: function (_, r) {
+            r.update({ hair: 'blue'}, this.callback);
+          },
+          "which can then be retrieved": function (e, res) {
+            assert.isObject(res);
+            assert.equal(res.hair, 'blue');
+          }
         }
       }
     }
