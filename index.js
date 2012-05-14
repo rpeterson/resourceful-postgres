@@ -91,20 +91,11 @@ PostgreSQL.prototype.create = function(obj, cb) {
 
 
 PostgreSQL.prototype.update = function(id, obj, cb) {
-  if( typeof id === 'number' ){
-    this._query(
-      "UPDATE " + this.table 
-      + " SET " + queryString.stringify(obj, '\', ', ' = \'') + '\''
-      + " WHERE " + this._key + " = " + id + " RETURNING *;"
-    , cb);
-  }else{
-    console.log("/n ---");
-    console.log(id);
-    console.dir(obj);
-    console.log("/n --- /n");
-    cb();
-  }
-	
+  this._query(
+    "UPDATE " + this.table 
+    + " SET " + queryString.stringify(obj, '\', ', ' = \'') + '\''
+    + " WHERE " + this._key + " = " + id + " RETURNING *;"
+  , cb);
 };
 
 
