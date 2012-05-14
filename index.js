@@ -78,6 +78,7 @@ PostgreSQL.prototype.save = function(obj, cb) {
   } else {
     this.create(obj, cb);
   }
+  return;
 };
 
 
@@ -107,13 +108,18 @@ PostgreSQL.prototype.destroy = function(id, cb) {
 
 
 PostgreSQL.prototype.find = function(conditions, cb) {
-  //To-Do 
+  delete conditions.resource;
+  var sql = "SELECT * FROM " + this.table;
+  if(JSON.stringify(conditions) != '{}'){
+    sql += queryString.stringify(conditions, '\', ', ' = \'') + '\''
+  }
+  this._query(sql, cb);
 };
 
 
-PostgreSQL.prototype.filter = function(filter, cb) {
-  //To-Do
-};
+// PostgreSQL.prototype.filter = function(filter, cb) {
+//   //To-Do
+// };
 
 
 PostgreSQL.prototype.sync = function(factory, callback) {
@@ -147,22 +153,21 @@ PostgreSQL.prototype._getValues = function(obj){
 PostgreSQL.prototype._query = function(sql, cb){
   var self = this;
   this.client.query(sql, function(err, res){
-      result = null;
-      if(err) return cb(err);
-      if(res.rowCount === 1) {
-        self.cache.update(res.rows[0][self._key], res.rows[0]);
-        result = res.rows[0];
+    result = null;
+    if(err) return cb(err);
+    if(res.rowCount === 1) {
+      self.cache.update(res.rows[0][self._key], res.rows[0]);
+      result = res.rows[0];
+    }else{
+      if(res.rowCount){
+        self.cache.update(sql, res.rows);
+        result = res.rows;
       }else{
-        if(!err && res.rowCount){
-          self.cache.update(sql, res.rows);
-          result = res.rows;
-        }else{
-          err = {};
-          err.status = 404;
-          err.notFound = true;
-        }
+        err = {};
+        err.status = 404;
+        err.notFound = true;
       }
-      cb(err, result);
+    }
+    cb(err, result);
   });
-  return;
 };

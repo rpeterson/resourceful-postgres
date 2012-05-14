@@ -12,7 +12,7 @@ require('../index');
 
 resourceful.env = 'postgres';
 
-vows.describe('resourceful/engines/database').addVows({
+vows.describe('resourceful/engines/database').addBatch({
   "A database containing default resources": {
     topic: function () {
       var promise = new(events.EventEmitter);
@@ -42,15 +42,12 @@ vows.describe('resourceful/engines/database').addVows({
       assert.isArray(obj);
     }
   }
-}).addVows({
+}).addBatch({
   "A default Resource factory" : {
     topic: function() {
       this.Factory = resourceful.define('user', function () {
         this.use('pg', {table: pgTestTable});
       });
-      //this.Factory._key = 'id';
-      //delete this.Factory.schema.properties['_id'];
-      //this.Factory.number('id');
       this.Factory.string('name');
       this.Factory.number('age');
       this.Factory.string('hair');
@@ -58,7 +55,7 @@ vows.describe('resourceful/engines/database').addVows({
     },
     "a create() request": {
       topic: function (r) {
-        r.create({name: 'james', age: 30, hair: 'red'}, this.callback);
+        return r.create({name: 'james', age: 30, hair: 'red'}, this.callback);
       },
       "should return the newly created object": function (e, obj) {
         if(e) console.log(e);
@@ -67,7 +64,7 @@ vows.describe('resourceful/engines/database').addVows({
       },
       "should create the record in the db": {
         topic: function (_, r) {
-          r.get(4, this.callback);
+          return r.get(4, this.callback);
         },        
         "which can then be retrieved": function (e, res) {
           if(e) console.log(e);
@@ -77,7 +74,7 @@ vows.describe('resourceful/engines/database').addVows({
         },
         "and be able to update it": {
           topic: function (_, r) {
-            r.update({ hair: 'blue'}, this.callback);
+            return r.update({ hair: 'blue'}, this.callback);
           },
           "which can then be retrieved": function (e, res) {
             assert.isObject(res);
@@ -106,7 +103,7 @@ vows.describe('resourceful/engines/database').addVows({
         },
         "followed by an update() request": {
           topic: function (r) {
-            return r.update({ name: 'robert' }, this.callback);
+            r.update({ name: 'robert' }, this.callback);
           },
           "should respond successfully": function (e, obj) {
             assert.isNull(e);
@@ -134,6 +131,28 @@ vows.describe('resourceful/engines/database').addVows({
           assert.equal(e.status, 404);
           assert.isUndefined(obj);
         }
+      }
+    }
+  }
+}).addBatch({
+  "A default Resource factory": {
+    topic: function() {
+      this.Factory = resourceful.define('user', function () {
+        this.use('pg', {table: pgTestTable});
+      });
+      this.Factory.string('name');
+      this.Factory.number('age');
+      this.Factory.string('hair');
+      return this.Factory;
+    },
+    "an all() request": {
+      topic: function(r){
+        return r.all(this.callack);
+      },
+      "should respond with an array of all records": function(e, obj) {
+        console.dir(obj);
+        assert.isNull(e);
+        assert.isObject(obj);
       }
     }
   }
