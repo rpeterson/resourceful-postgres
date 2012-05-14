@@ -4,8 +4,7 @@ var url = require('url'),
     resourceful = require('resourceful'),
     async = require('async');
 
-
- var PostgreSQL = resourceful.engines.Pg = function Pg(config) {
+var PostgreSQL = resourceful.engines.Pg = function Pg(config) {
 
  	if(config && config.table) {
 		this.table = config.table;
@@ -27,7 +26,7 @@ var url = require('url'),
 		}
 	}
 
-	config.host     = config.host     || '127.0.0.1';
+	config.host     = config.host     || 'localhost';
 	config.auth     = config.auth     || 'postgres';
 	config.port     = config.port     || 5432;
 	config.database = config.database || resourceful.env || 'postgres';
@@ -48,9 +47,9 @@ var url = require('url'),
 
   this._key = config._key || 'id';
 
-  this.config = config;
+  this.cache = new resourceful.Cache();
 
-	this.cache = new resourceful.Cache();
+  this.config = config;
 
  };
 
@@ -92,11 +91,20 @@ PostgreSQL.prototype.create = function(obj, cb) {
 
 
 PostgreSQL.prototype.update = function(id, obj, cb) {
-	this._query(
-		"UPDATE " + this.table 
-		+ " SET " + queryString.stringify(obj, '\', ', ' = \'') + '\''
-		+ " WHERE " + this._key + " = " + id + " RETURNING *;"
-	, cb);
+  if( typeof id === 'number' ){
+    this._query(
+      "UPDATE " + this.table 
+      + " SET " + queryString.stringify(obj, '\', ', ' = \'') + '\''
+      + " WHERE " + this._key + " = " + id + " RETURNING *;"
+    , cb);
+  }else{
+    console.log("/n ---");
+    console.log(id);
+    console.dir(obj);
+    console.log("/n --- /n");
+    cb();
+  }
+	
 };
 
 
@@ -146,10 +154,21 @@ PostgreSQL.prototype._getValues = function(obj){
 
 
 PostgreSQL.prototype._query = function(sql, cb){
+  var self = this;
   this.client.query(sql, function(err, res){
-      if(err) console.log(err);
-      result = null;
-      if(res) result = (res.rowCount === 1) ? res.rows[0] : res.rows;
+      if(err) return cb(err);
+      if(res.rowCount === 1) {
+        self.cache.update(res.rows[0][self._key], res.rows[0]);
+        result = res.rows[0];
+      }else{
+        if(!err && res.rowCount){
+          self.cache.update(sql, res.rows);
+          result = res.rows;
+        }else{
+          result = res;
+        }
+      }
       cb(err, result);
   });
+  return;
 };

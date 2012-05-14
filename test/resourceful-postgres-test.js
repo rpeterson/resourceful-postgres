@@ -101,8 +101,8 @@ vows.describe('resourceful/engines/database').addVows({
           assert.equal(obj.name, 'bob');
         },
         "should store the object in the cache": function () {
-          assert.isObject(this.Factory.connection.cache.store['bob']);
-        }/*,
+          assert.isObject(this.Factory.connection.cache.store[1]);
+        },
         "followed by an update() request": {
           topic: function (r) {
             return r.update({ name: 'robert' }, this.callback);
@@ -110,20 +110,20 @@ vows.describe('resourceful/engines/database').addVows({
           "should respond successfully": function (e, obj) {
             assert.isNull(e);
             assert.ok(obj);
-          },
+          }/*,
           "followed by another update() request": {
             topic: function (_, r) {
-              r.update({ age: 37 }, this.callback);
+              return r.update({ age: 37 }, this.callback);
             },
             "should respond successfully": function (e, res) {
               assert.isNull(e);
             },
             "should save the latest revision to the cache": function (e, res) {
-              assert.equal(this.Factory.connection.cache.store['bob'].age, 37);
+              assert.equal(this.Factory.connection.cache.store[1].age, 37);
             }
-          }
-        }*/
-      },
+          }*/
+        }
+      }/*,
       "when unsuccessful": {
         topic: function (r) {
           r.get(86, this.callback);
@@ -133,7 +133,7 @@ vows.describe('resourceful/engines/database').addVows({
           assert.equal(e.statusCode, 404);
           assert.isUndefined(obj);
         }
-      }
+      }*/
     }
   }
 }).export(module);
