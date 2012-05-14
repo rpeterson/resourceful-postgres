@@ -45,7 +45,7 @@ var PostgreSQL = resourceful.engines.Pg = function Pg(config) {
 
   this.client.connect();
 
-  this._key = config._key || 'id';
+  this._key = config._key || '_id';
 
   this.cache = new resourceful.Cache();
 
@@ -73,8 +73,8 @@ PostgreSQL.prototype.get = function(id, cb) {
 
 
 PostgreSQL.prototype.save = function(obj, cb) {
-  if( obj.id ) {
-    this.update(obj.id, obj, cb);
+  if( obj[this._key] ) {
+    this.update(obj[this._key], obj, cb);
   } else {
     this.create(obj, cb);
   }
@@ -122,7 +122,7 @@ PostgreSQL.prototype.sync = function(factory, callback) {
 
 
 PostgreSQL.prototype._getFields = function(obj){
-  delete obj.id;
+  delete obj[this._key];
   delete obj.resource;
   var fields = [];
   for(key in obj){
@@ -133,7 +133,7 @@ PostgreSQL.prototype._getFields = function(obj){
 
 
 PostgreSQL.prototype._getValues = function(obj){
-  delete obj.id;
+  delete obj[this._key];
   delete obj.resource;
   var fields = [];
   for(key in obj){
@@ -147,6 +147,7 @@ PostgreSQL.prototype._getValues = function(obj){
 PostgreSQL.prototype._query = function(sql, cb){
   var self = this;
   this.client.query(sql, function(err, res){
+      result = null;
       if(err) return cb(err);
       if(res.rowCount === 1) {
         self.cache.update(res.rows[0][self._key], res.rows[0]);
@@ -156,7 +157,9 @@ PostgreSQL.prototype._query = function(sql, cb){
           self.cache.update(sql, res.rows);
           result = res.rows;
         }else{
-          result = res;
+          err = {};
+          err.status = 404;
+          err.notFound = true;
         }
       }
       cb(err, result);

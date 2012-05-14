@@ -5,7 +5,8 @@ var resourceful = require('resourceful'),
     vows = require('vows'),
     pg = require('pg'),
     pgConnString = 'tcp://postgres@localhost/postgres',
-    pgTestTable  = 'users';
+    pgTestTable  = 'users',
+    pgIdKey = '_id';
 
 require('../index');
 
@@ -19,7 +20,7 @@ vows.describe('resourceful/engines/database').addVows({
           db.connect();
       db.query("DROP TABLE " + pgTestTable + "", function(err, res) {
         db.query("CREATE TABLE " + pgTestTable 
-                  + " (id SERIAL, name varchar(10), age integer, hair varchar(10))"
+                  + " ("+pgIdKey+" SERIAL, name varchar(10), age integer, hair varchar(10))"
                   , function(err, res) {
           async.map([
             {name: 'bob', age: 35, hair: 'black'},
@@ -47,9 +48,9 @@ vows.describe('resourceful/engines/database').addVows({
       this.Factory = resourceful.define('user', function () {
         this.use('pg', {table: pgTestTable});
       });
-      this.Factory._key = 'id';
-      delete this.Factory.schema.properties['_id'];
-      this.Factory.number('id');
+      //this.Factory._key = 'id';
+      //delete this.Factory.schema.properties['_id'];
+      //this.Factory.number('id');
       this.Factory.string('name');
       this.Factory.number('age');
       this.Factory.string('hair');
@@ -71,7 +72,7 @@ vows.describe('resourceful/engines/database').addVows({
         "which can then be retrieved": function (e, res) {
           if(e) console.log(e);
           assert.isObject(res);
-          assert.equal(res.id, 4);
+          assert.equal(res[pgIdKey], 4);
           assert.equal(res.age, 30);
         },
         "and be able to update it": {
@@ -97,7 +98,7 @@ vows.describe('resourceful/engines/database').addVows({
         },
         "should respond with the right object": function (e, obj) {
           assert.isNull(e);
-          assert.equal(obj.id, 1);
+          assert.equal(obj[pgIdKey], 1);
           assert.equal(obj.name, 'bob');
         },
         "should store the object in the cache": function () {
@@ -110,10 +111,10 @@ vows.describe('resourceful/engines/database').addVows({
           "should respond successfully": function (e, obj) {
             assert.isNull(e);
             assert.ok(obj);
-          }/*,
+          },
           "followed by another update() request": {
             topic: function (_, r) {
-              return r.update({ age: 37 }, this.callback);
+              r.update({ age: 37 }, this.callback);
             },
             "should respond successfully": function (e, res) {
               assert.isNull(e);
@@ -121,19 +122,19 @@ vows.describe('resourceful/engines/database').addVows({
             "should save the latest revision to the cache": function (e, res) {
               assert.equal(this.Factory.connection.cache.store[1].age, 37);
             }
-          }*/
+          }
         }
-      }/*,
+      },
       "when unsuccessful": {
         topic: function (r) {
           r.get(86, this.callback);
         },
         "should respond with an error": function (e, obj) {
           assert.isTrue(e.notFound);
-          assert.equal(e.statusCode, 404);
+          assert.equal(e.status, 404);
           assert.isUndefined(obj);
         }
-      }*/
+      }
     }
   }
 }).export(module);
