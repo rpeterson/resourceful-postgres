@@ -84,6 +84,56 @@ vows.describe('resourceful/engines/database').addVows({
           }
         }
       }
+    },
+    "a get() request": {
+      "focus: when successful": {
+        topic: function (r) {
+          return r.get(1, this.callback);
+        },
+        "should respond with a Resource instance": function (e, obj) {
+          assert.isObject(obj);
+          assert.instanceOf(obj, resourceful.Resource);
+          assert.equal(obj.constructor, this.Factory);
+        },
+        "should respond with the right object": function (e, obj) {
+          assert.isNull(e);
+          assert.equal(obj.id, 1);
+          assert.equal(obj.name, 'bob');
+        },
+        "should store the object in the cache": function () {
+          assert.isObject(this.Factory.connection.cache.store['bob']);
+        }/*,
+        "followed by an update() request": {
+          topic: function (r) {
+            return r.update({ name: 'robert' }, this.callback);
+          },
+          "should respond successfully": function (e, obj) {
+            assert.isNull(e);
+            assert.ok(obj);
+          },
+          "followed by another update() request": {
+            topic: function (_, r) {
+              r.update({ age: 37 }, this.callback);
+            },
+            "should respond successfully": function (e, res) {
+              assert.isNull(e);
+            },
+            "should save the latest revision to the cache": function (e, res) {
+              assert.equal(this.Factory.connection.cache.store['bob'].age, 37);
+            }
+          }
+        }*/
+      },
+      "when unsuccessful": {
+        topic: function (r) {
+          r.get(86, this.callback);
+        },
+        "should respond with an error": function (e, obj) {
+          assert.isTrue(e.notFound);
+          assert.equal(e.statusCode, 404);
+          assert.isUndefined(obj);
+        }
+      }
     }
   }
 }).export(module);
