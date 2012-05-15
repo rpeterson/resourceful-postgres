@@ -64,7 +64,7 @@ PostgreSQL.prototype.load = function (data) {
 
 PostgreSQL.prototype.get = function(id, cb) {
   this._query(
-    "SELECT * " 
+    "SELECT " + this.table + ".* " 
     + " FROM " + this.table 
     + " WHERE " + this._key + " = " + id 
     + " LIMIT 1"
@@ -109,7 +109,7 @@ PostgreSQL.prototype.destroy = function(id, cb) {
 
 PostgreSQL.prototype.find = function(conditions, cb) {
   delete conditions.resource;
-  var sql = "SELECT * FROM " + this.table;
+  var sql = "SELECT " + this.table + ".* FROM " + this.table;
   if(JSON.stringify(conditions) != '{}'){
     sql += queryString.stringify(conditions, '\', ', ' = \'') + '\''
   }

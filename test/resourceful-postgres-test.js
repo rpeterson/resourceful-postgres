@@ -145,12 +145,11 @@ vows.describe('resourceful/engines/database').addBatch({
       this.Factory.string('hair');
       return this.Factory;
     },
-    "an all() request": {
+    "all() request": {
       topic: function(r){
-        return r.all(this.callack);
+        r.all(this.callack);
       },
-      "should respond with an array of all records": function(e, obj) {
-        console.dir(obj);
+      "should respond with an object of all records": function(e, obj) {
         assert.isNull(e);
         assert.isObject(obj);
       }
